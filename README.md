@@ -1,0 +1,1 @@
+This is my calculator project! Going to just be using basic Javascript, HTML, and CSS. Only has the operations add, subtract, multiply, and divide.
