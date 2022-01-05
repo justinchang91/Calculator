@@ -45,6 +45,14 @@ operators.forEach(operator => {
     operator.addEventListener("click", populateDisplaySign);
 });
 
+const leftParenthesis = document.querySelector(".left-bracket");
+leftParenthesis.addEventListener("click", populateDisplayLeftParenthesis);
+
+
+const rightParenthesis = document.querySelector(".right-bracket");
+rightParenthesis.addEventListener("click", populateDisplayRightParenthesis);
+
+
 // Important variables
 let displayText = "";  // What the user sees
 let number = ""; // Keep track of the current number (before the next sign)
@@ -52,14 +60,17 @@ let equation = [];
 
 // Utility functions
 function updateDisplayText(val) {
+
     displayText = displayText + val;
 }
 
 function updateNumber(val) {
+
     number = number + val;
 }
 
 function updateEquation(num, sign) {
+
     equation.push(num);
     equation.push(sign);
     console.log("equation: ")
@@ -67,6 +78,7 @@ function updateEquation(num, sign) {
 }
 
 function clearDisplayText() {
+
     displayText = "";
     const display = document.querySelector(".display");
     display.textContent = displayText;
@@ -75,10 +87,12 @@ function clearDisplayText() {
 }
 
 function clearNumber() {
+
     number = "";
 }
 
 function populateDisplayNumber(e) {
+
     const num = e.target.innerText;
     updateDisplayText(num);
     updateNumber(num);
@@ -89,6 +103,7 @@ function populateDisplayNumber(e) {
 }
 
 function populateDisplaySign(e) {
+
     const sign = e.target.innerText;
     updateDisplayText(sign);
     const num = parseInt(number);
@@ -100,56 +115,136 @@ function populateDisplaySign(e) {
     display.textContent = displayText;
 }
 
-function done() {
+function populateDisplayLeftParenthesis(e) {
+
+    const parenthesis = e.target.innerText;
+    updateDisplayText(parenthesis);
+    equation.push(parenthesis); // can't use the updateEquation function
+
+    const display = document.querySelector(".display");
+    display.textContent = displayText;
+
+    // Don't want to add the parenthesis to number! 
+    // Actually we do, only if it's the right parenthesis. Right parenthesis SHOULD use updateEquation and then clear number
+}
+
+function populateDisplayRightParenthesis(e) {
+
+    const parenthesis = e.target.innerText;
+    updateDisplayText(parenthesis);
+    const num = parseInt(number);
+    updateEquation(num, ")");
+    clearNumber();
+
+    const display = document.querySelector(".display");
+    display.textContent = displayText;
+}
+
+function done(eq) {
+
     const operators = ["+", "-", "*", "/"];
     for (let i = 0; i < operators.length; i++) {
-        if (equation.includes(operators[i])) {
+        if (eq.includes(operators[i])) {
             return false;
         }
     }
     return true;
 }
 
-function performStep(operator) {
-    const index = equation.indexOf(operator);
+function performStep(operator, eq) {
+
+    const index = eq.indexOf(operator);
     const num1Index = index-1;
     const num2Index = index+1;
 
-    const leftSide = equation.slice(0, num1Index);
-    const rightSide = equation.slice(num2Index+1);
+    const leftSide = eq.slice(0, num1Index);
+    const rightSide = eq.slice(num2Index+1);
 
-    const result = operate(equation[index], equation[num1Index], equation[num2Index]);
-    equation = leftSide.concat(result, rightSide);
+    const result = operate(eq[index], eq[num1Index], eq[num2Index]);
+    console.log("result is: " + result);
+    eq = leftSide.concat(result, rightSide);
+
+    return eq;
 }
 
-function calculateResult() {
-    // Add the number before "=" to the equaton
-    equation.push(parseInt(number));
-    console.log(equation);
+function getAllIndexes(arr, val) {
 
-    while (!done()) {
-        if (equation.includes("/")) {
-            performStep("/");
-        } else if (equation.includes("*")) {
-            performStep("*");
-        } else if (equation.includes("+")) {
-            performStep("+");
+    let indexes = [];
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] === val) {
+            indexes.push(i);
+        }
+    }
+    return indexes;
+}
+
+function solve(eq) {
+    while (!done(eq)) {
+        if (eq.includes("/")) {
+            eq = performStep("/", eq);
+        } else if (eq.includes("*")) {
+            eq = performStep("*", eq);
+        } else if (eq.includes("+")) {
+            eq = performStep("+", eq);
         } else {
-            performStep("-");
+            eq = performStep("-", eq);
         }
     }
 
-    // By now there should be just the result left in the equation
-    const result = equation[0];
-    displayText = result;
-    number = `${result}`;  // make the result the most recent number (incase of more operations on result)
-    const display = document.querySelector(".display");
-    display.textContent = displayText;
-    equation.pop(); // Remove everything that's in the array. Since we stored the result in number, next time we click the sign we will use the result and add to array.
+    return eq;
 }
 
-// Okay need to do some work with how I'm displaying my results and I may need to update displaytext/equation variables 
-// Having an issue where if I press the equal sign, get the result, then do another operation on the result, the equation array
-// for some reason gets the previous number added to it.
+function recursiveSolver(eq) {  // Doesn't solve all the way, just solves until no brackets
+    
+    // Base - if there's no parentheses, we want to solve.
+    if (!eq.includes("(") && !eq.includes(")")) {
+
+        console.log("No parentheses! Solving now ... ");
+        // Solve
+        return solve(eq);
+    }
+
+    // Oh no! There are parentheses. Get the index of outer left and right parentheses
+    const leftParenthesis = eq.indexOf("("); 
+    const allRightParentheses = getAllIndexes(eq, ")");
+    const rightParenthesis = allRightParentheses[allRightParentheses.length - 1]; 
+
+    // Using the indexes of the parentheses, slice the current equation into left, right, middle
+    const leftSide = eq.slice(0, leftParenthesis);
+    const rightSide = eq.slice(rightParenthesis + 1);
+    const middle = eq.slice(leftParenthesis + 1, rightParenthesis);  // What's inside the brackets
+
+    // Our new equation is the left side + the solved middle + right side
+    let newEq =  leftSide.concat(recursiveSolver(middle), rightSide); 
+
+    // Now we have the new equation (after getting rid of brackets), but now we have to solve it then return
+    return solve(newEq);
+}
+
+function calculateResult() {
+
+    // Add the number before "=" to the equaton (if there even is a number)
+    if (number !== "") {
+        equation.push(parseInt(number));
+        number = "";
+        console.log(equation);
+    }
+
+    // Solve the parenthesese
+    equation = recursiveSolver(equation);
+    
+    const result = equation[0];  // equation should only have 1 value in it
+    displayText = result;
+    number = `${result}`; // Make the number the result in case of further calculations
+    const display = document.querySelector(".display");
+    display.textContent = displayText;
+    equation.pop(); // Clear the equation array
+}
+
+
 
 // 3*8/2+5-9/3 - mine: 14, linux: 14
+
+// 3+5*10/2+9 - mine: 37, linux: 37
+
+// 10/5+9-3*6 - mine; -7, linux: -7
