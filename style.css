@@ -65,6 +65,15 @@ body {
   background-color: rgb(235, 172, 183);
 }
 
+.delete {
+  flex: 1;
+  background-color: rgb(255, 192, 203);
+}
+
+.delete:hover {
+  background-color: rgb(235, 172, 183);
+}
+
 .zero {
   flex: 2;
 }

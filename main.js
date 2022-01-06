@@ -29,6 +29,9 @@ function operate(operator, num1, num2) {
 }
 
 // Add event listeners
+const del = document.querySelector(".delete");
+del.addEventListener("click", deleteLastElement);
+
 const clear = document.querySelector(".clear");
 clear.addEventListener("click", clearDisplayText);
 
@@ -56,6 +59,7 @@ rightParenthesis.addEventListener("click", populateDisplayRightParenthesis);
 // Important variables
 let displayText = "";  // What the user sees
 let number = ""; // Keep track of the current number (before the next sign)
+let oldNumbers = []; // Keep track of old numbers
 let equation = [];
 
 // Utility functions
@@ -87,7 +91,7 @@ function clearDisplayText() {
 }
 
 function clearNumber() {
-
+    oldNumbers.push(number);
     number = "";
 }
 
@@ -106,10 +110,15 @@ function populateDisplaySign(e) {
 
     const sign = e.target.innerText;
     updateDisplayText(sign);
-    const num = parseInt(number);
-    updateEquation(num, sign);
-    clearNumber();
-    console.log("number: " + number);
+    if (number === "") { // For deletion purposes
+        equation.push(sign);
+    } else {
+        const num = parseInt(number);
+        updateEquation(num, sign);
+        clearNumber();
+        console.log("number: " + number);
+    }
+    
 
     const display = document.querySelector(".display");
     display.textContent = displayText;
@@ -140,6 +149,59 @@ function populateDisplayRightParenthesis(e) {
     display.textContent = displayText;
 }
 
+function deleteLastElement() {
+
+    const operators = ["+", "-", "*", "/"];
+    console.log("number: " + number);
+    console.log("display text: " + displayText)
+    console.log(equation);
+    
+    // If we are trying to delete an operator, we need to remove it from the equation
+    if (operators.includes(displayText[displayText.length - 1])) {  // Deleting a sign
+        equation.pop();
+    } else { // Deleting a number
+        
+        // Check to see if the number matches with the last element in the equation
+        if (equation[equation.length - 1] == number) {
+
+            number = number.slice(0, number.length - 1);
+            
+            // Update equation array
+            if (number === "") {
+                equation.pop();
+            } else {
+                equation[equation.length - 1] = parseInt(number);
+            }
+
+        } else { // If the number is not yet in the eqn, just reduce the number
+            number = number.slice(0, number.length - 1);
+        }
+        
+        // Set number to old number
+        if (number === "" && equation.length > 0) {
+            number = oldNumbers.pop();
+        } 
+
+        if (equation.length === 0) {
+            oldNumbers = [];
+        }
+  
+    }
+
+    console.log("displayText after: " + displayText);
+    console.log(typeof(displayText));
+    // Delete last element from displayText
+    displayText = displayText.slice(0, displayText.length - 1);
+    
+
+    console.log("number: " + number);
+    console.log("display text: " + displayText)
+    console.log(equation);
+
+    const display = document.querySelector(".display");
+    display.textContent = displayText;
+}
+
 function done(eq) {
 
     const operators = ["+", "-", "*", "/"];
@@ -160,10 +222,11 @@ function performStep(operator, eq) {
     const leftSide = eq.slice(0, num1Index);
     const rightSide = eq.slice(num2Index+1);
 
+    
     const result = operate(eq[index], eq[num1Index], eq[num2Index]);
     console.log("result is: " + result);
     eq = leftSide.concat(result, rightSide);
-
+    
     return eq;
 }
 
@@ -234,7 +297,7 @@ function calculateResult() {
     equation = recursiveSolver(equation);
     
     const result = equation[0];  // equation should only have 1 value in it
-    displayText = result;
+    displayText = `${result}`;
     number = `${result}`; // Make the number the result in case of further calculations
     const display = document.querySelector(".display");
     display.textContent = displayText;
