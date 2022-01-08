@@ -51,9 +51,105 @@ operators.forEach(operator => {
 const leftParenthesis = document.querySelector(".left-bracket");
 leftParenthesis.addEventListener("click", populateDisplayLeftParenthesis);
 
-
 const rightParenthesis = document.querySelector(".right-bracket");
 rightParenthesis.addEventListener("click", populateDisplayRightParenthesis);
+
+// For numbers from keyboard
+window.addEventListener("keyup", function(e) {
+    let num = "-1";
+    let sign = "";
+    let del = false;
+    let leftBracket = false;
+    let rightBracket = false;
+    let decimal = false;
+    let allClear = false;
+    console.log(e.code);
+    if (e.code === "Digit0" && !e.shiftKey) {
+        num = "0";
+    } else if (e.code === "Digit1") {
+        num = "1";
+    } else if (e.code === "Digit2") {
+        num = "2";
+    } else if (e.code === "Digit3") {
+        num = "3";
+    } else if (e.code === "Digit4") {
+        num = "4";
+    } else if (e.code === "Digit5") {
+        num = "5";
+    } else if (e.code === "Digit6") {
+        num = "6";
+    } else if (e.code === "Digit7") {
+        num = "7";
+    } else if (e.code === "Digit8" && !e.shiftKey) {
+        num = "8";
+    } else if (e.code === "Digit9" && !e.shiftKey) {
+        num = "9";
+    } else if (e.code === "Slash") {
+        sign = "/";
+    } else if (e.shiftKey && e.code === "Digit8") {
+        sign = "*";
+    } else if (e.code === "Minus") {
+        sign = "-";
+    } else if (e.shiftKey && e.code === "Equal") {
+        sign = "+";
+    } else if (e.code === "Equal" || e.code === "Enter") {
+        sign = "=";
+    } else if (e.code === "Backspace" && !e.shiftKey) {
+        del = true;
+    } else if (e.shiftKey && e.code === "Digit9") {
+        leftBracket = true;
+    } else if (e.shiftKey && e.code === "Digit0") {
+        rightBracket = true;
+    } else if (e.code === "Period") {
+        decimal = true;
+    } else if (e.shiftKey && e.code === "Backspace") {
+        allClear = true;
+    }
+
+    if (num !== "-1") {
+        updateDisplayText(num);
+        updateNumber(num);
+    }
+    else if (sign === "=") {
+        calculateResult();
+    }
+    else if (sign !== "") {
+        updateDisplayText(sign);
+        if (number === "") { // For deletion purposes
+            equation.push(sign);
+        } else {
+            const num = parseFloat(number);
+            updateEquation(num, sign);
+            clearNumber();
+            console.log("number: " + number);
+        }
+    }
+    else if (del) {
+        deleteLastElement();
+    }
+    else if (leftBracket) {
+        updateDisplayText("(");
+        equation.push("(");
+    }
+    else if (rightBracket) {
+        updateDisplayText(")");
+        const num = parseInt(number);
+        updateEquation(num, ")");
+        clearNumber();
+    } else if (decimal) {
+        updateDisplayText(".");
+        updateNumber(".");
+    } else if (allClear) {
+        displayText = "";
+        clearNumber();
+        equation = [];
+    }
+
+    const display = document.querySelector(".display");
+    display.textContent = displayText;
+    console.log("number: " + number);
+    
+});
 
 
 // Important variables
@@ -96,7 +192,7 @@ function clearNumber() {
 }
 
 function populateDisplayNumber(e) {
-
+    
     const num = e.target.innerText;
     updateDisplayText(num);
     updateNumber(num);
@@ -113,10 +209,11 @@ function populateDisplaySign(e) {
     if (number === "") { // For deletion purposes
         equation.push(sign);
     } else {
-        const num = parseInt(number);
+        console.log("number: " + number);
+        const num = parseFloat(number);
+        console.log("num: " + num);
         updateEquation(num, sign);
         clearNumber();
-        console.log("number: " + number);
     }
     
 
@@ -288,7 +385,7 @@ function calculateResult() {
 
     // Add the number before "=" to the equaton (if there even is a number)
     if (number !== "") {
-        equation.push(parseInt(number));
+        equation.push(parseFloat(number));
         number = "";
         console.log(equation);
     }
@@ -296,7 +393,7 @@ function calculateResult() {
     // Solve the parenthesese
     equation = recursiveSolver(equation);
     
-    const result = equation[0];  // equation should only have 1 value in it
+    const result = Math.round(equation[0] * 100) / 100;  // equation should only have 1 value in it
     displayText = `${result}`;
     number = `${result}`; // Make the number the result in case of further calculations
     const display = document.querySelector(".display");
